@@ -53,29 +53,14 @@ partitioner = ms.KFold(n_splits=5, shuffle=True, random_state=42)
     и будут ответами на вопросы 1 и 2.
 """
 
-
-def cross_validation(estimator: nb.KNeighborsClassifier, X: np.array, y: np.array, kfolder: ms.KFold):
-    """
-    Функция для осуществления кросс-валидации.
-    """
-    accuracy_list = list()
-    for train_index, test_index in kfolder.split(y):
-        estimator.fit(
-            X[train_index],
-            y[train_index]
-        )
-        accuracy_list.append(
-            np.average(np.array(estimator.predict(X[test_index]) == np.array(y[test_index]))))
-    return pandas.Series(accuracy_list)
-
-
 kresults = list()  # index = neighbors - 1
 for k in range(50):
     classifier = nb.KNeighborsClassifier(n_neighbors=k + 1)
-    scores = cross_validation(classifier,
-                              data.drop(['class'], axis=1).to_numpy(),
-                              data['class'].to_numpy(),
-                              partitioner)
+    scores = ms.cross_val_score(
+        estimator=classifier,
+        X=data.drop(['class'], axis=1).to_numpy(),
+        y=data['class'].to_numpy(),
+        cv=partitioner)
     kresults.append(scores.mean())
 
 print(max(kresults), kresults.index(max(kresults)) + 1)
@@ -95,7 +80,12 @@ scaled_data = pp.scale(data.drop(['class'], axis=1))
 kresults = list()
 for k in range(50):
     classifier = nb.KNeighborsClassifier(n_neighbors=k + 1)
-    scores = cross_validation(classifier, scaled_data, data['class'].to_numpy(), partitioner)
+    scores = ms.cross_val_score(
+        estimator=classifier,
+        X=scaled_data,
+        y=data['class'].to_numpy(),
+        cv=partitioner
+    )
     kresults.append(scores.mean())
 
 """
@@ -112,4 +102,3 @@ with open('./result_data/task_03.3.txt', 'w') as f:
 
 with open('./result_data/task_03.4.txt', 'w') as f:
     f.write(f"{max(kresults):0.2f}")
-
